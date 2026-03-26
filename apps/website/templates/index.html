@@ -1,0 +1,16 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+
+<h1>Food microservices</h1>
+
+<div>
+  <h2>Fruit salad of the day</h2>
+  <p>Recipe: {{ recipe.name }}</p>
+  <p>Calories: {{ recipe.calories }}</p>
+</div>
+
+<div>
+  <h2>Calories required per day</h2>
+  {% for key, value in nutrition.items() %}
+    <li><strong>{{ key }}:</strong> {{ value }}</li>
+  {% endfor %}
+</div>
