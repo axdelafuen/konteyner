@@ -1,0 +1,2 @@
+# konteyner
+konteyner və vm
