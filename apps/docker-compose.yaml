@@ -1,0 +1,90 @@
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    networks:
+      - db-network
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 1s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  calories:
+    build: ./calories
+    container_name: calories
+    environment:
+      - PORT=80
+      - MONGODB_CONNECTION_STRING=${MONGODB_URI}
+      - MONGODB_COLLECTION=calories_data
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - db-network
+      - app-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:80/', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  ingredients:
+    build: ./ingredients
+    container_name: ingredients
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  recipes:
+    build: ./recipes
+    container_name: recipes
+    command: ["${PORT_RECIPES}"]
+    environment:
+      - INGREDIENTS_API_URL=http://ingredients:80
+    depends_on:
+      ingredients:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECIPES}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  website:
+    build: ./website
+    container_name: website
+    command: ["${PORT_WEBSITE}"]
+    environment:
+      - RECIPE_MICROSERVICE_URL=http://recipes:${PORT_RECIPES}
+      - NUTRITION_MICROSERVICE_URL=http://calories:80
+    depends_on:
+      recipes:
+        condition: service_healthy
+      calories:
+        condition: service_healthy
+    networks:
+      - app-network
+    ports:
+      - "${PORT_WEBSITE}:${PORT_WEBSITE}"
+
+networks:
+  app-network:
+    driver: bridge
+  db-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: website
+  template:
+    metadata:
+      labels:
+        app: website
+    spec:
+      containers:
+      - name: website
+        image: website:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "250m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10

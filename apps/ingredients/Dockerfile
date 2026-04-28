@@ -3,4 +3,5 @@ WORKDIR /app
 COPY Gemfile* ./
 RUN bundle install
 COPY . .
+EXPOSE 80
 CMD ["ruby", "ingredients.rb"]
